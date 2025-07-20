@@ -1,50 +1,92 @@
-import { PrismaClient } from '@prisma/client';
+// src/controllers/user.controller.ts
+import { PrismaClient } from "@prisma/client";
+import { connectKafkaProducer, AUTH_LOGS_TOPIC } from "../config/kafka-config.js";
+// Import your custom Kafka metrics
+import { kafkaProducerMessageCounter, kafkaProducerErrorCounter } from '../utils/prometheus.js';
 const prisma = new PrismaClient();
-// CREATE
-export const createUser = async (req, res) => {
+let producer; // Will be initialized asynchronously
+(async () => {
     try {
-        const { name, email } = req.body;
-        const user = await prisma.user.create({ data: { name, email } });
-        res.status(201).json(user);
+        producer = await connectKafkaProducer();
     }
     catch (error) {
-        res.status(400).json({ error: 'User already exists or bad request' });
+        console.error("Failed to initialize Kafka producer in user.controller:", error);
+        // Depending on your application's tolerance, you might want to exit or disable Kafka features here.
+        // Consider incrementing an application-level error counter here if init fails
     }
-};
-// READ ALL
-export const getAllUsers = async (_req, res) => {
-    const users = await prisma.user.findMany();
-    res.json(users);
-};
-// READ ONE
-export const getUserById = async (req, res) => {
-    const id = Number(req.params.id);
-    const user = await prisma.user.findUnique({ where: { id } });
-    user ? res.json(user) : res.status(404).json({ error: 'User not found' });
-};
-// UPDATE
-export const updateUser = async (req, res) => {
-    const id = Number(req.params.id);
-    const { name, email } = req.body;
+})();
+/**
+ * Synchronizes OAuth user data with the database.
+ * Creates a new user if one does not exist, otherwise returns the existing user.
+ * Publishes a message to Kafka if a new user is created.
+ * @param req Express Request object
+ * @param res Express Response object
+ * @returns JSON response with success status and user data, or an error.
+ */
+export const syncOAuthUser = async (req, res) => {
+    console.log("Received syncOAuthUser request");
+    const { email, name, image, provider } = req.body;
+    if (!email) {
+        console.warn("Bad Request: Email is required for syncOAuthUser.");
+        return res.status(400).json({ error: "Email is required" });
+    }
     try {
-        const user = await prisma.user.update({
-            where: { id },
-            data: { name, email },
-        });
-        res.json(user);
+        let user = await prisma.user.findUnique({ where: { email } });
+        if (!user) {
+            // Create new user if not found
+            user = await prisma.user.create({
+                data: {
+                    email,
+                    name,
+                    image,
+                    provider,
+                },
+            });
+            console.log(`New user created: ${user.email}`);
+            // Publish message to Kafka if producer is initialized
+            if (producer) {
+                try {
+                    await producer.send({
+                        topic: AUTH_LOGS_TOPIC,
+                        messages: [
+                            { value: JSON.stringify({ event: "newUserCreated", userId: user.id, email: user.email }), partition: 0 },
+                        ],
+                    });
+                    console.log(`Kafka message sent for new user: ${user.email}`);
+                    // Increment Kafka producer success counter
+                    kafkaProducerMessageCounter.inc({ topic: AUTH_LOGS_TOPIC, event_type: 'newUserCreated' });
+                }
+                catch (kafkaError) {
+                    console.error("Failed to send Kafka message:", kafkaError);
+                    // Increment Kafka producer error counter
+                    kafkaProducerErrorCounter.inc({ topic: AUTH_LOGS_TOPIC });
+                }
+            }
+            else {
+                console.warn("Kafka producer not initialized. New user creation not logged to Kafka.");
+                // Consider a counter for unlogged events due to producer not being ready
+            }
+        }
+        else {
+            console.log(`Existing user found: ${user.email}`);
+        }
+        console.log("syncOAuthUser successful for:", user.email);
+        res.status(200).json({ success: true, user });
     }
-    catch (error) {
-        res.status(404).json({ error: 'User not found' });
+    catch (err) {
+        console.error("Error in syncOAuthUser:", err);
+        // More specific error handling could be added here (e.g., Prisma errors)
+        res.status(500).json({ error: "Internal Server Error", details: err instanceof Error ? err.message : "An unknown error occurred" });
+        // You could add a generic application error counter here as well
     }
 };
-// DELETE
-export const deleteUser = async (req, res) => {
-    const id = Number(req.params.id);
-    try {
-        await prisma.user.delete({ where: { id } });
-        res.json({ message: 'User deleted' });
-    }
-    catch {
-        res.status(404).json({ error: 'User not found' });
-    }
+/**
+ * Simple test endpoint to check if the application is running.
+ * @param req Express Request object
+ * @param res Express Response object
+ * @returns JSON response indicating application status.
+ */
+export const test = (req, res) => {
+    console.log("Test endpoint hit.");
+    res.status(200).json({ message: "The app is working fine. Status 200." });
 };

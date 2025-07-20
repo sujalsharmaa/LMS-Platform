@@ -1,9 +1,7 @@
-import { Router } from 'express';
-import { createUser, getAllUsers, getUserById, updateUser, deleteUser, } from '../controllers/user.controller.js';
-const router = Router();
-router.post('/', createUser);
-router.get('/', getAllUsers);
-router.get('/:id', getUserById);
-router.put('/:id', updateUser);
-router.delete('/:id', deleteUser);
+// routes/user.routes.ts
+import express from "express";
+import { syncOAuthUser, test } from "../controllers/user.controller.js";
+const router = express.Router();
+router.post("/sync", syncOAuthUser);
+router.get("/test", test);
 export default router;
