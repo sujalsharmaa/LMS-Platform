@@ -10,14 +10,7 @@ import {
   // Other icons as needed for categories
 } from "lucide-react"
 import { Typewriter } from "react-simple-typewriter"
-import { Card, CardContent } from "@/components/ui/card"
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-} from "@/components/ui/carousel"
+
 import {
   NavigationMenu,
   NavigationMenuContent,
@@ -25,11 +18,9 @@ import {
   NavigationMenuLink,
   NavigationMenuList,
   NavigationMenuTrigger,
-  navigationMenuTriggerStyle,
 } from "@/components/ui/navigation-menu"
 import { Input } from "@/components/ui/input" // Assuming you have a shadcn/ui input
 import { Button } from "@/components/ui/button" // Assuming you have a shadcn/ui button
-import { Separator } from "@/components/ui/separator" // Might be useful for dividers
 import SplashCursor from "@/src/blocks/Animations/SplashCursor/SplashCursor"
 import { Swiper, SwiperSlide } from 'swiper/react'
 import { Autoplay, Pagination, Navigation } from 'swiper/modules'
