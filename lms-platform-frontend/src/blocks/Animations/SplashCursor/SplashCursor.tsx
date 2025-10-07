@@ -20,14 +20,6 @@ type OESTextureHalfFloat = {
   HALF_FLOAT_OES: number;
 };
 
-type WebGLExtensions = {
-  formatRGBA: TextureFormat;
-  formatRG: TextureFormat;
-  formatR: TextureFormat;
-  halfFloatTexType: number;
-  supportLinearFiltering: boolean;
-};
-
 type GLWith2 = WebGLRenderingContext | WebGL2RenderingContext;
 
 
@@ -126,10 +118,7 @@ export default function SplashCursor({
       config.SHADING = false;
     }
 
-function isWebGL2(gl: GL): gl is WebGL2RenderingContext {
-  // Safe runtime check
-  return typeof (gl as WebGL2RenderingContext).drawBuffers === "function";
-}
+
 type TextureFormat = { internalFormat: number; format: number };
 type WebGLExtensions = {
   formatRGBA: TextureFormat;

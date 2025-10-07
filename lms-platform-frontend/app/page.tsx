@@ -268,11 +268,7 @@ const reviews = [
   // Add more if needed
 ];
 
-// Utility function to group reviews into chunks of 5
-const chunk = <T,>(arr: T[], size: number): T[][] =>
-  Array.from({ length: Math.ceil(arr.length / size) }, (_, i) =>
-    arr.slice(i * size, i * size + size)
-  );
+
 
 
 
