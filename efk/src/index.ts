@@ -5,6 +5,9 @@ import { Client } from '@elastic/elasticsearch';
 import { startKafkaConsumer, AUTH_LOGS_TOPIC, AUTH_GROUP_ID } from '../config/kafka-config.js';
 import client from 'prom-client'; // Import prom-client for Prometheus metrics
 import express from 'express'; // Import express for creating the HTTP server
+import dotenv from "dotenv"
+
+dotenv.config();
 
 // --- Prometheus Configuration ---
 const PROMETHEUS_PORT = 8900
@@ -41,7 +44,7 @@ const elasticsearchIndexingDurationSeconds = new client.Histogram({
 });
 
 // --- Elasticsearch Configuration ---
-const ELASTICSEARCH_NODE = process.env.ELASTICSEARCH_NODE || 'http://localhost:9200';
+const ELASTICSEARCH_NODE = process.env.ELASTICSEARCH_NODE
 const ELASTICSEARCH_INDEX = process.env.ELASTICSEARCH_INDEX || 'auth_logs';
 
 // Initialize Elasticsearch client
@@ -154,3 +157,5 @@ async function startLogConsumerService(): Promise<void> {
 
 // Start the service when this file is executed
 startLogConsumerService();
+
+

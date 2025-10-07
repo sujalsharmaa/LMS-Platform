@@ -1,10 +1,13 @@
 // src/config/kafka-config.ts
 
 import { Kafka, Producer, Consumer } from 'kafkajs';
+import dotenv from "dotenv"
+
+dotenv.config()
 
 // Load environment variables (ensure you have a .env file or similar setup)
 // For production, these should be set in the deployment environment.
-const KAFKA_BROKER = process.env.KAFKA_BROKER || 'localhost:9092';
+const KAFKA_BROKER = process.env.KAFKA_BROKER || '54.167.5.143:9092';
 const CLIENT_ID = process.env.KAFKA_CLIENT_ID || '1';
 export const AUTH_LOGS_TOPIC = process.env.AUTH_LOGS_TOPIC || 'auth-logs';
 export const AUTH_GROUP_ID = process.env.AUTH_GROUP_ID || 'auth-group';
@@ -76,14 +79,7 @@ export const disconnectKafkaProducer = async (): Promise<void> => {
   }
 };
 
-/**
- * Starts a Kafka consumer for a given topic and group.
- * This is an example and might need to be adapted based on specific consumer needs.
- * @param topic The topic to subscribe to.
- * @param groupId The consumer group ID.
- * @param eachMessageCallback Callback function to handle each message.
- * @returns The Kafka consumer instance.
- */
+
 export const startKafkaConsumer = async (
   topic: string = AUTH_LOGS_TOPIC,
   groupId: string = AUTH_GROUP_ID,

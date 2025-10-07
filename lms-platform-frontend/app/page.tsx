@@ -508,6 +508,7 @@ export default function UdemyNavbar() {
           isolation: "isolate",
         }}
       >
+        {/* {best splash cursor} */}
         <SplashCursor
           SIM_RESOLUTION={512}
           DYE_RESOLUTION={2048}
@@ -522,6 +523,7 @@ export default function UdemyNavbar() {
           BACK_COLOR={{ r: 0.0, g: 0.0, b: 0.0 }}
           TRANSPARENT={false}
         />
+
       </div>
     </div>
 
@@ -593,23 +595,102 @@ export default function UdemyNavbar() {
         ))}
       </Swiper>
     </div>
-        <div className='h-40 w-full flex gap-8 justify-center align-center'>
-          {Instructors.map((item,index)=>
-            <div key={index} className="h-36 w-full/4 justify-center align-center">
-              <Image className="rounded-full border-2 border-white"
-              src={item.imageURL}
-              alt='image-instructor'
-              width={200}
-              height={200}
-              ></Image>
-             
+{/* ✅ Instructors Carousel */}
+      <div className='w-full px-4 py-12 bg-[#f4f4f5]'>
+        <h2 className="text-2xl font-bold text-center mb-8 text-gray-800">Meet Our Instructors</h2>
+        <div className='flex flex-wrap justify-evenly items-center gap-8'>
+          {Instructors.map((item, index) => (
+            <div key={index} className="flex flex-col items-center space-y-">
+              <Image
+                className="rounded-full border-2 border-violet-600"
+                src={item.imageURL}
+                alt='Instructor'
+                width={200}
+                height={200}
+              />
+              <p className="text-sm font-semibold text-gray-800">{item.name}</p>
             </div>
-             <p>{item.name}</p>
-          )}
+          ))}
         </div>
-    <div
-    className='bg-violet-800 flex justify-center items-center'
-    >footer</div>
+      </div>
+
+      {/* ✅ Footer */}
+<footer className="bg-violet-900 text-gray-100 pt-12 pb-8 px-4 md:px-16">
+  <div className="max-w-screen-xl mx-auto grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-8">
+    
+    {/* Company */}
+    <div>
+      <h3 className="font-bold text-lg mb-4 text-white">Company</h3>
+      <ul className="space-y-2 text-sm">
+        <li><Link href="/about">About Us</Link></li>
+        <li><Link href="/careers">Careers</Link></li>
+        <li><Link href="/instructors">Become an Instructor</Link></li>
+        <li><Link href="/blog">Blog</Link></li>
+        <li><Link href="/affiliates">Affiliate Program</Link></li>
+      </ul>
+    </div>
+
+    {/* Certification Courses */}
+    <div>
+      <h3 className="font-bold text-lg mb-4 text-white">Certification Courses</h3>
+      <ul className="space-y-2 text-sm">
+        <li><Link href="/certifications/aws">AWS Certified Cloud Practitioner</Link></li>
+        <li><Link href="/certifications/data-science">Data Science Certification</Link></li>
+        <li><Link href="/certifications/fullstack">Fullstack Developer Bootcamp</Link></li>
+        <li><Link href="/certifications/cybersecurity">Cybersecurity Foundation</Link></li>
+        <li><Link href="/certifications/python">Python for Everyone</Link></li>
+      </ul>
+    </div>
+
+    {/* Resources */}
+    <div>
+      <h3 className="font-bold text-lg mb-4 text-white">Resources</h3>
+      <ul className="space-y-2 text-sm">
+        <li><Link href="/help">Help & Support</Link></li>
+        <li><Link href="/faq">FAQs</Link></li>
+        <li><Link href="/community">Learner Community</Link></li>
+        <li><Link href="/events">Events & Webinars</Link></li>
+        <li><Link href="/newsletter">Newsletter Signup</Link></li>
+      </ul>
+    </div>
+
+    {/* Explore */}
+    <div>
+      <h3 className="font-bold text-lg mb-4 text-white">Explore</h3>
+      <ul className="space-y-2 text-sm">
+        <li><Link href="/categories/development">Development</Link></li>
+        <li><Link href="/categories/business">Business</Link></li>
+        <li><Link href="/categories/design">Design</Link></li>
+        <li><Link href="/categories/marketing">Marketing</Link></li>
+        <li><Link href="/categories/it">IT & Software</Link></li>
+      </ul>
+    </div>
+
+    {/* Legal & Social */}
+    <div>
+      <h3 className="font-bold text-lg mb-4 text-white">Legal</h3>
+      <ul className="space-y-2 text-sm">
+        <li><Link href="/terms">Terms of Use</Link></li>
+        <li><Link href="/privacy">Privacy Policy</Link></li>
+        <li><Link href="/cookie">Cookie Policy</Link></li>
+        <li><Link href="/security">Security</Link></li>
+        <li><Link href="/sitemap">Sitemap</Link></li>
+      </ul>
+    </div>
+  </div>
+
+  {/* Divider */}
+  <div className="border-t border-violet-700 mt-12 pt-8 flex flex-col md:flex-row items-center justify-between">
+    <p className="text-sm text-gray-400">&copy; {new Date().getFullYear()} LMS Platform. All rights reserved.</p>
+    <div className="flex space-x-4 mt-4 md:mt-0">
+      <Link href="https://facebook.com"><img src="/icons/facebook.svg" alt="Facebook" className="h-5 w-5" /></Link>
+      <Link href="https://twitter.com"><img src="/icons/twitter.svg" alt="Twitter" className="h-5 w-5" /></Link>
+      <Link href="https://linkedin.com"><img src="/icons/linkedin.svg" alt="LinkedIn" className="h-5 w-5" /></Link>
+      <Link href="https://youtube.com"><img src="/icons/youtube.svg" alt="YouTube" className="h-5 w-5" /></Link>
+    </div>
+  </div>
+</footer>
+
     </div>
   )
 }

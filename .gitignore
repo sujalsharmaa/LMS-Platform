@@ -3,3 +3,43 @@ node_modules
 .env
 
 /generated/prisma
+# Terraform
+################################################################################
+**/.terraform/
+# State files
+*.tfstate
+*.tfstate.*
+crash.log
+crash.*.log
+
+# Variable files (often secret)
+*.tfvars
+*.tfvars.json
+
+# Overrides
+*override.tf
+*override.tf.json
+
+# CLI config (may contain credentials)
+.terraformrc
+terraform.rc
+
+# Provider plugin archives
+terraform.tfplan
+*.zip
+
+kubernetes-manifests/Secret.yaml
+terraform-configuration/Secret.yaml
+
+# DO commit dependency lock for providers:
+# .terraform.lock.hcl
+
+terraform-configuration/.terraform.tfstate.lock.info
+terraform-configuration/terraform.tfstate.backup
+.terraform.tfstate.lock.info
+terraform.tfstate.backup
+Terraform-configuration/.terraform/providers/registry.terraform.io/hashicorp/random/
+Terraform-configuration/.terraform.lock.hcl
+Terraform-configuration/.ssh/id_rsa_terraform_new.pub
+Terraform-configuration/.ssh/id_rsa_terraform_new
+Terraform-configuration\.terraform.lock.hcl

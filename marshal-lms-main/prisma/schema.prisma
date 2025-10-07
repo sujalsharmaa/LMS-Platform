@@ -80,6 +80,9 @@ model Verification {
   @@map("verification")
 }
 
+
+
+
 model Course {
   id String @id @default(uuid())
 
