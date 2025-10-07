@@ -16,11 +16,11 @@ type GL = WebGLRenderingContext | WebGL2RenderingContext;
 
 type TextureFormat = { internalFormat: number; format: number };
 
-type OESTextureHalfFloat = {
-  HALF_FLOAT_OES: number;
-};
+// type OESTextureHalfFloat = {
+//   HALF_FLOAT_OES: number;
+// };
 
-type GLWith2 = WebGLRenderingContext | WebGL2RenderingContext;
+// type GLWith2 = WebGLRenderingContext | WebGL2RenderingContext;
 
 
 interface SplashCursorProps {
@@ -120,13 +120,13 @@ export default function SplashCursor({
 
 
 
-type WebGLExtensions = {
-  formatRGBA: TextureFormat;
-  formatRG: TextureFormat;
-  formatR: TextureFormat;
-  halfFloatTexType: number;
-  supportLinearFiltering: boolean;
-};
+// type WebGLExtensions = {
+//   formatRGBA: TextureFormat;
+//   formatRG: TextureFormat;
+//   formatR: TextureFormat;
+//   halfFloatTexType: number;
+//   supportLinearFiltering: boolean;
+// };
 
 function isWebGL2(gl: GL): gl is WebGL2RenderingContext {
   return 'drawBuffers' in gl; // simple runtime guard
