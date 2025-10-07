@@ -128,64 +128,70 @@ type WebGLExtensions = {
   supportLinearFiltering: boolean;
 };
 
+function isWebGL2(gl: GL): gl is WebGL2RenderingContext {
+  return 'drawBuffers' in gl; // simple runtime guard
+}
 
 function getWebGLContext(canvas: HTMLCanvasElement): {
   gl: GL;
-  ext: WebGLExtensions;
+  ext: {
+    formatRGBA: TextureFormat;
+    formatRG: TextureFormat;
+    formatR: TextureFormat;
+    halfFloatTexType: number;
+    supportLinearFiltering: boolean;
+  };
 } {
   const params: WebGLContextAttributes = {
-    alpha: true,
-    depth: false,
-    stencil: false,
-    antialias: false,
-    preserveDrawingBuffer: false,
+    alpha: true, depth: false, stencil: false, antialias: false, preserveDrawingBuffer: false,
   };
 
-  let gl = canvas.getContext("webgl2", params) as WebGL2RenderingContext | null;
+  let gl: GL | null = canvas.getContext('webgl2', params) as WebGL2RenderingContext | null;
   if (!gl) {
     gl =
-      (canvas.getContext("webgl", params) as WebGLRenderingContext | null) ||
-      (canvas.getContext("experimental-webgl", params) as WebGLRenderingContext | null);
+      (canvas.getContext('webgl', params) as WebGLRenderingContext | null) ||
+      (canvas.getContext('experimental-webgl', params) as WebGLRenderingContext | null);
   }
-  if (!gl) throw new Error("Unable to initialize WebGL.");
+  if (!gl) throw new Error('Unable to initialize WebGL.');
 
-  const isWebGL2 = "drawBuffers" in gl;
+  const wgl2 = isWebGL2(gl);
 
+  // half-float + filtering capability
   let supportLinearFiltering = false;
-  let halfFloatExt: OESTextureHalfFloat | null = null;
+  let halfFloatTexType = 0;
 
-  if (isWebGL2) {
-    (gl as WebGL2RenderingContext).getExtension("EXT_color_buffer_float");
-    supportLinearFiltering = !!(gl as WebGL2RenderingContext).getExtension("OES_texture_float_linear");
+  if (wgl2) {
+    gl.getExtension('EXT_color_buffer_float');
+    supportLinearFiltering = !!gl.getExtension('OES_texture_float_linear');
+    halfFloatTexType = (gl as WebGL2RenderingContext).HALF_FLOAT;
   } else {
-    halfFloatExt = gl.getExtension("OES_texture_half_float") as OESTextureHalfFloat | null;
-    supportLinearFiltering = !!gl.getExtension("OES_texture_half_float_linear");
+    const halfFloat = (gl as WebGLRenderingContext).getExtension('OES_texture_half_float') as
+      | { HALF_FLOAT_OES: number } | null;
+    supportLinearFiltering = !!(gl as WebGLRenderingContext).getExtension('OES_texture_half_float_linear');
+    halfFloatTexType = halfFloat?.HALF_FLOAT_OES ?? 0;
   }
 
   gl.clearColor(0, 0, 0, 1);
 
-  const halfFloatTexType = isWebGL2
-    ? (gl as WebGL2RenderingContext).HALF_FLOAT
-    : halfFloatExt?.HALF_FLOAT_OES ?? 0;
-
+  // Choose the best formats we can support on this device
   let formatRGBA: TextureFormat | null;
   let formatRG: TextureFormat | null;
   let formatR: TextureFormat | null;
 
-  if (isWebGL2) {
+  if (wgl2) {
     const gl2 = gl as WebGL2RenderingContext;
-    formatRGBA = getSupportedFormat(gl2, gl2.RGBA16F, gl.RGBA, halfFloatTexType);
-    formatRG = getSupportedFormat(gl2, gl2.RG16F, gl2.RG, halfFloatTexType);
-    formatR = getSupportedFormat(gl2, gl2.R16F, gl2.RED, halfFloatTexType);
+    formatRGBA = getSupportedFormat(gl2, gl2.RGBA16F, gl2.RGBA, halfFloatTexType);
+    formatRG   = getSupportedFormat(gl2, gl2.RG16F,  gl2.RG,   halfFloatTexType);
+    formatR    = getSupportedFormat(gl2, gl2.R16F,   gl2.RED,  halfFloatTexType);
   } else {
-    // Fallbacks for WebGL1
+    // WebGL1 fallback: use RGBA everywhere
     formatRGBA = getSupportedFormat(gl, gl.RGBA, gl.RGBA, halfFloatTexType);
-    formatRG = getSupportedFormat(gl, gl.RGBA, gl.RGBA, halfFloatTexType);
-    formatR = getSupportedFormat(gl, gl.RGBA, gl.RGBA, halfFloatTexType);
+    formatRG   = getSupportedFormat(gl, gl.RGBA, gl.RGBA, halfFloatTexType);
+    formatR    = getSupportedFormat(gl, gl.RGBA, gl.RGBA, halfFloatTexType);
   }
 
   if (!formatRGBA || !formatRG || !formatR) {
-    throw new Error("Required texture formats are not supported by this browser/GPU.");
+    throw new Error('Required texture formats are not supported by this browser/GPU.');
   }
 
   return {
@@ -201,40 +207,32 @@ function getWebGLContext(canvas: HTMLCanvasElement): {
 }
 
 
-function getSupportedFormat(
-  gl: GLWith2,
-  internalFormat: number,
-  format: number,
-  type: number
-): TextureFormat | null {
-  if (!supportRenderTextureFormat(gl, internalFormat, format, type)) {
-    if ("drawBuffers" in gl) {
-      const gl2 = gl as WebGL2RenderingContext;
-      switch (internalFormat) {
-        case gl2.R16F:
-          return getSupportedFormat(gl2, gl2.RG16F, gl2.RG, type);
-        case gl2.RG16F:
-          return getSupportedFormat(gl2, gl2.RGBA16F, gl2.RGBA, type);
-        default:
-          return null;
-      }
-    }
-    return null;
+function getSupportedFormat(gl: GL, internalFormat: number, format: number, type: number): TextureFormat | null {
+  if (supportRenderTextureFormat(gl, internalFormat, format, type)) {
+    return { internalFormat, format };
   }
-  return { internalFormat, format };
+  // If WebGL2 constants aren’t supported, try to downgrade
+  if (isWebGL2(gl)) {
+    switch (internalFormat) {
+      case gl.R16F:  return getSupportedFormat(gl, gl.RG16F, gl.RG, type);
+      case gl.RG16F: return getSupportedFormat(gl, gl.RGBA16F, gl.RGBA, type);
+      default:       return null;
+    }
+  }
+  return null;
 }
 
 
-    function supportRenderTextureFormat(
-      gl: WebGLRenderingContext | WebGL2RenderingContext,
-      internalFormat: number,
-      format: number,
-      type: number
-    ) {
-      const texture = gl.createTexture();
-      if (!texture) return false;
+function supportRenderTextureFormat(
+  gl: GL,
+  internalFormat: number,
+  format: number,
+  type: number
+): boolean {
+  const tex = gl.createTexture();
+  if (!tex) return false;
 
-      gl.bindTexture(gl.TEXTURE_2D, texture);
+      gl.bindTexture(gl.TEXTURE_2D, tex);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
@@ -259,11 +257,19 @@ function getSupportedFormat(
         gl.FRAMEBUFFER,
         gl.COLOR_ATTACHMENT0,
         gl.TEXTURE_2D,
-        texture,
+        tex,
         0
       );
-      const status = gl.checkFramebufferStatus(gl.FRAMEBUFFER);
-      return status === gl.FRAMEBUFFER_COMPLETE;
+        const ok = gl.checkFramebufferStatus(gl.FRAMEBUFFER) === gl.FRAMEBUFFER_COMPLETE;
+
+  // cleanup (optional but nice)
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+  gl.bindTexture(gl.TEXTURE_2D, null);
+  gl.deleteFramebuffer(fbo);
+  gl.deleteTexture(tex);
+
+  return ok;
+
     }
 
     function hashCode(s: string) {
