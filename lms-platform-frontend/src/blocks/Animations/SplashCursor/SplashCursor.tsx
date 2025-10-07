@@ -119,7 +119,7 @@ export default function SplashCursor({
     }
 
 
-type TextureFormat = { internalFormat: number; format: number };
+
 type WebGLExtensions = {
   formatRGBA: TextureFormat;
   formatRG: TextureFormat;
