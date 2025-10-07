@@ -1,8 +1,22 @@
 // lib/authOptions.ts
+import GoogleProvider from "next-auth/providers/google";
+import GitHubProvider from "next-auth/providers/github";
+import { type AuthOptions } from "next-auth";
+import type { JWT } from "next-auth/jwt";
+import type { Account, Profile } from "next-auth";
 
-import GoogleProvider from "next-auth/providers/google"
-import GitHubProvider from "next-auth/providers/github"
-import { type AuthOptions } from "next-auth"
+// Minimal provider-specific profile shapes
+type GoogleProfile = Profile & {
+  email?: string;
+  name?: string;
+  picture?: string;
+};
+
+type GitHubProfile = Profile & {
+  email?: string;
+  name?: string;
+  avatar_url?: string;
+};
 
 export const authOptions: AuthOptions = {
   providers: [
@@ -16,54 +30,40 @@ export const authOptions: AuthOptions = {
     }),
   ],
   callbacks: {
-    async jwt({ token, account, profile }) {
-      if (account && profile?.email) {
-        token.email = profile.email;
-        token.name = profile.name;
-        // The type for profile.picture is string | undefined, profile.avatar_url is string.
-        // The token.image is expected to be string | null | undefined.
-        // It's safer to cast profile.picture to string or check its existence.
-        token.image = (profile as any).picture || (profile as any).avatar_url; // Added (profile as any) for type safety if profile doesn't directly include these
+    async jwt({ token, account, profile }: { token: JWT; account?: Account | null; profile?: Profile | null }) {
+      if (account && profile) {
         token.provider = account.provider;
+
+        if (account.provider === "google") {
+          const p = profile as GoogleProfile;
+          if (p.email) token.email = p.email;
+          if (p.name) token.name = p.name;
+          if (p.picture) token.image = p.picture;
+        } else if (account.provider === "github") {
+          const p = profile as GitHubProfile;
+          // GitHub may not return email unless scope/user settings allow it
+          if (p.email) token.email = p.email;
+          if (p.name) token.name = p.name;
+          if (p.avatar_url) token.image = p.avatar_url;
+        }
       }
       return token;
     },
+
     async session({ session, token }) {
-      session.user.email = token.email;
-      session.user.name = token.name;
-      session.user.image = token.image;
-      // Add the provider to the session user object
-      if (token.provider) { // Ensure provider exists on token
-        (session.user as any).provider = token.provider; // Cast to any to add custom property
+      // token is JWT (augmented below)
+      if (session.user) {
+        session.user.email = token.email ?? session.user.email ?? null;
+        session.user.name = token.name ?? session.user.name ?? null;
+        session.user.image = (token.image as string | null | undefined) ?? session.user.image ?? null;
+        session.user.provider = token.provider ?? null; // no 'any' needed after augmentation
       }
       return session;
-    }
+    },
   },
   session: {
     strategy: "jwt",
-    maxAge: 30*24*60*60
+    maxAge: 30 * 24 * 60 * 60,
   },
   secret: process.env.NEXTAUTH_SECRET!,
-}
-
-// OPTIONAL: Extend the Session and JWT types for better TypeScript support
-// In a separate file (e.g., types/next-auth.d.ts) or at the top of your authOptions.ts
-declare module "next-auth" {
-  interface Session {
-    user: {
-      name?: string | null;
-      email?: string | null;
-      image?: string | null;
-      provider?: string | null; // Add provider to the user object in the session
-    }
-  }
-}
-
-declare module "next-auth/jwt" {
-  interface JWT {
-    name?: string | null;
-    email?: string | null;
-    image?: string | null;
-    provider?: string | null; // Add provider to the JWT
-  }
-}
+};
